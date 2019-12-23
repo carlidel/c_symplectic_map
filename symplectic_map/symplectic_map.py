@@ -1,10 +1,9 @@
-import cppimport
 import numpy as np
 from tqdm import tqdm
 import scipy as sc
 import scipy.integrate as integrate
 
-cpp_sm = cppimport.imp("c_symplectic_map")
+import c_symplectic_map as cpp_sm
 
 class symplectic_map(object):
     def __init__(self, omega_0, omega_1, omega_2, epsilon, x_star, delta, alpha, beta, barrier_radius, x_0, p_0):

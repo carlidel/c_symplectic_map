@@ -1,15 +1,3 @@
-/*
-<%
-setup_pybind11(cfg)
-cfg['dependencies'] = ['c_symplectic_map.h']
-cfg['compiler_args'] = ['-std=c++14', '-O3', '-c', '-DTHRUST_DEVICE_SYSTEM=THRUST_DEVICE_SYSTEM_OMP', '-IC:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v9.2\\include', '-fopenmp', '/O2', '/openmp']
-cfg['linker_args'] = ['-lgomp'] 
-%>
-*/
-#include <pybind11/pybind11.h>
-#include <pybind11/stl.h>
-namespace py = pybind11;
-
 #include "c_symplectic_map.h"
 
 // symplectic map functor
@@ -180,20 +168,4 @@ std::vector<unsigned int> symplectic_map::t()
     std::vector<unsigned int> T_copy(T.size());
     thrust::copy(T.begin(), T.end(), T_copy.begin());
     return T_copy;
-}
-
-// PYTHON BINDINGS!
-
-PYBIND11_MODULE(c_symplectic_map, m)
-{
-    py::class_<symplectic_map>(m, "symplectic_map")
-        .def(py::init<double, double, double, double, double, double, double, double, double, std::vector<double>, std::vector<double>>())
-        .def("reset", &symplectic_map::reset)
-        .def("compute", (void (symplectic_map::*)(unsigned int, unsigned int, double)) &symplectic_map::compute)
-        .def("compute", (void (symplectic_map::*)(unsigned int, unsigned int, std::vector<double>)) &symplectic_map::compute)
-        .def("x", &symplectic_map::x)
-        .def("p", &symplectic_map::p)
-        .def("x0", &symplectic_map::x0)
-        .def("p0", &symplectic_map::p0)
-        .def("t", &symplectic_map::t);
 }
