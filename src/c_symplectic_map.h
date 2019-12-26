@@ -62,7 +62,7 @@ struct functor_map
 
 // symplectic_map_struct
 
-struct symplectic_map
+struct c_symplectic_map
 {
     double omega_0, omega_1, omega_2;
     double epsilon;
@@ -80,7 +80,7 @@ struct symplectic_map
 
     // Constructor
 
-    symplectic_map(double _omega_0, double _omega_1, double _omega_2, double _epsilon, double _x_star, double _delta, double _alpha, double _beta, double _barrier_radius, std::vector<double> _X_0, std::vector<double> _P_0);
+    c_symplectic_map(double _omega_0, double _omega_1, double _omega_2, double _epsilon, double _x_star, double _delta, double _alpha, double _beta, double _barrier_radius, std::vector<double> _X_0, std::vector<double> _P_0);
 
     // Methods
     

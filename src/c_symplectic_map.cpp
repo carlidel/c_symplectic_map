@@ -85,21 +85,21 @@ __host__ __device__ thrust::device_vector<double> functor_map::make_correlated_n
 
 // symplectic_map_struct
 
-symplectic_map::symplectic_map(double _omega_0, double _omega_1, double _omega_2, double _epsilon, double _x_star, double _delta, double _alpha, double _beta, double _barrier_radius, std::vector<double> _X_0, std::vector<double> _P_0) : omega_0(_omega_0), omega_1(_omega_1), omega_2(_omega_2), epsilon(_epsilon), x_star(_x_star), delta(_delta), alpha(_alpha), beta(_beta), barrier_radius(_barrier_radius), X(_X_0), P(_P_0), X_0(_X_0), P_0(_P_0)
+c_symplectic_map::c_symplectic_map(double _omega_0, double _omega_1, double _omega_2, double _epsilon, double _x_star, double _delta, double _alpha, double _beta, double _barrier_radius, std::vector<double> _X_0, std::vector<double> _P_0) : omega_0(_omega_0), omega_1(_omega_1), omega_2(_omega_2), epsilon(_epsilon), x_star(_x_star), delta(_delta), alpha(_alpha), beta(_beta), barrier_radius(_barrier_radius), X(_X_0), P(_P_0), X_0(_X_0), P_0(_P_0)
 {
     T.resize(X_0.size());
     thrust::fill(T.begin(), T.end(), 0);
     last_hit.resize(T.size());
 }
 
-void symplectic_map::reset()
+void c_symplectic_map::reset()
 {
     X = X_0;
     P = P_0;
     thrust::fill(T.begin(), T.end(), 0);
 }
 
-void symplectic_map::compute(unsigned int kernel_iterations, unsigned int block_iterations, double gamma)
+void c_symplectic_map::compute(unsigned int kernel_iterations, unsigned int block_iterations, double gamma)
 {
     functor_map func(omega_0, omega_1, omega_2, epsilon, x_star, delta, alpha, beta, barrier_radius, kernel_iterations, gamma);
     thrust::fill(last_hit.begin(), last_hit.end(), 0.0);
@@ -115,7 +115,7 @@ void symplectic_map::compute(unsigned int kernel_iterations, unsigned int block_
     }
 }
 
-void symplectic_map::compute(unsigned int kernel_iterations, unsigned int block_iterations, std::vector<double> given_noise)
+void c_symplectic_map::compute(unsigned int kernel_iterations, unsigned int block_iterations, std::vector<double> given_noise)
 {
     thrust::device_vector<double> noise(kernel_iterations * block_iterations);
     thrust::copy(given_noise.begin(), given_noise.end(), noise.begin());
@@ -135,35 +135,35 @@ void symplectic_map::compute(unsigned int kernel_iterations, unsigned int block_
 
 // Getters
 
-std::vector<double> symplectic_map::x()
+std::vector<double> c_symplectic_map::x()
 {
     std::vector<double> X_copy(X.size());
     thrust::copy(X.begin(), X.end(), X_copy.begin());
     return X_copy;
 }
 
-std::vector<double> symplectic_map::p()
+std::vector<double> c_symplectic_map::p()
 {
     std::vector<double> P_copy(P.size());
     thrust::copy(P.begin(), P.end(), P_copy.begin());
     return P_copy;
 }
 
-std::vector<double> symplectic_map::x0()
+std::vector<double> c_symplectic_map::x0()
 {
     std::vector<double> X_0_copy(X_0.size());
     thrust::copy(X_0.begin(), X_0.end(), X_0_copy.begin());
     return X_0_copy;
 }
 
-std::vector<double> symplectic_map::p0()
+std::vector<double> c_symplectic_map::p0()
 {
     std::vector<double> P_0_copy(P_0.size());
     thrust::copy(P_0.begin(), P_0.end(), P_0_copy.begin());
     return P_0_copy;
 }
 
-std::vector<unsigned int> symplectic_map::t()
+std::vector<unsigned int> c_symplectic_map::t()
 {
     std::vector<unsigned int> T_copy(T.size());
     thrust::copy(T.begin(), T.end(), T_copy.begin());

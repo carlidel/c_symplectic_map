@@ -4,7 +4,7 @@ import sys
 import setuptools
 import glob
 
-__version__ = '0.0.1'
+__version__ = '0.0.2'
 
 
 class get_pybind_include(object):
@@ -24,7 +24,7 @@ class get_pybind_include(object):
 
 ext_modules = [
     Extension(
-        'symplectic_map.c_symplectic_map',
+        'c_symplectic_map',
         glob.glob('src/*.cpp'),
         include_dirs=[
             'src/',
@@ -113,6 +113,7 @@ setup(
     description='A c++ implementation of a Symplectic Map with nice python bindings',
     long_description='',
     ext_modules=ext_modules,
+    packages=['symplectic_map'],
     install_requires=['pybind11>=2.4', 'numpy', 'scipy', 'tqdm'],
     setup_requires=['pybind11>=2.4'],
     cmdclass={'build_ext': BuildExt},

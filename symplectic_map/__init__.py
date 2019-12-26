@@ -1,1 +1,1 @@
-from .symplectic_map import symplectic_map
+from .wrapping import symplectic_map

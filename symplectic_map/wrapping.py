@@ -3,7 +3,7 @@ from tqdm import tqdm
 import scipy as sc
 import scipy.integrate as integrate
 
-import c_symplectic_map as cpp_sm
+from c_symplectic_map import c_symplectic_map
 
 class symplectic_map(object):
     def __init__(self, omega_0, omega_1, omega_2, epsilon, x_star, delta, alpha, beta, barrier_radius, x_0, p_0):
@@ -20,7 +20,7 @@ class symplectic_map(object):
         self.p_0 = p_0
         self.N = len(x_0)
 
-        self.engine = cpp_sm.symplectic_map(omega_0, omega_1, omega_2, epsilon, x_star, delta, alpha, beta, barrier_radius, x_0, p_0)
+        self.engine = c_symplectic_map(omega_0, omega_1, omega_2, epsilon, x_star, delta, alpha, beta, barrier_radius, x_0, p_0)
 
     def reset(self):
         self.engine.reset()
