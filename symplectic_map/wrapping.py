@@ -49,11 +49,14 @@ class symplectic_map(object):
         self.p_0 = p_0
         self.N = len(x_0)
 
+        self.iterations = 0
+
         self.engine = c_symplectic_map(omega_0, omega_1, omega_2, epsilon, x_star, delta, alpha, beta, barrier_radius, x_0, p_0)
 
     def reset(self):
         """Reset the engine to initial conditions
         """        
+        self.iterations = 0
         self.engine.reset()
 
     def compute_common_noise(self, noise_array):
@@ -65,6 +68,7 @@ class symplectic_map(object):
             noise array to use for computation
         """        
         self.engine.compute(len(noise_array), 1, noise_array)
+        self.iterations += len(noise_array)
     
     def compute_personal_noise(self, n_iterations, gamma=0.0):
         """Execute iterations with correlated noise with different realization for every single particle.
@@ -77,6 +81,7 @@ class symplectic_map(object):
             correlation coefficient (between 0 and 1!), by default 0.0
         """        
         self.engine.compute(n_iterations, 1, gamma)
+        self.iterations += n_iterations
 
     def get_data(self):
         """Get data from engine.
@@ -87,6 +92,17 @@ class symplectic_map(object):
             tuple with x, p, and number of iterations before loss data
         """        
         return np.array(self.engine.x()), np.array(self.engine.p()), np.array(self.engine.t())
+
+    def get_filtered_data(self):
+        """Get filtered data from engine.
+        
+        Returns
+        -------
+        tuple(ndarray, ndarray, ndarray)
+            tuple with x, p, and number of iterations before loss data
+        """
+        t = np.array(self.engine.t())
+        return (np.array(self.engine.x()))[t < self.iterations], (np.array(self.engine.p()))[t < self.iterations], t[t < self.iterations]
 
     def get_action(self):
         """Get action data from engine
@@ -100,8 +116,19 @@ class symplectic_map(object):
         p = np.array(self.engine.p())
         return (x * x + p * p) * 0.5
 
+    def get_filtered_action(self):
+        """Get filtered action data from engine (i.e. no zero values of lost particles)
+        
+        Returns
+        -------
+        ndarray
+            filtered action array data
+        """
+        action = self.get_action()
+        return action[action > 0]
+
     def get_times(self):
-        """Get loss times from engine
+        """Get times from engine
         
         Returns
         -------
@@ -110,13 +137,24 @@ class symplectic_map(object):
         """        
         return np.array(self.engine.t())
 
-    def get_survival_quota(self):
-        """Get number of survived particles
+    def get_filtered_times(self):
+        """Get only loss times from engine (i.e. only loss particles)
         
         Returns
         -------
-        int
-            number of particles survived
+        ndarray
+            filtered times array
+        """
+        times = self.get_times()
+        return times[times < self.iterations]
+
+    def get_survival_quota(self):
+        """Get time evolution of number of survived particles
+        
+        Returns
+        -------
+        ndarray
+            time evolution of survived particles
         """        
         t = np.array(self.get_times())
         max_t = np.amax(t)
@@ -126,12 +164,12 @@ class symplectic_map(object):
         return quota
 
     def get_lost_particles(self):
-        """Get number of lost particles
+        """Get time evolution of lost particles
         
         Returns
         -------
-        int
-            number of lost particles
+        ndarray
+            time evolution of number of lost particles
         """        
         quota = self.get_survival_quota()
         return self.N - quota
