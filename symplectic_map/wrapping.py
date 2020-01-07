@@ -102,7 +102,7 @@ class symplectic_map(object):
             tuple with x, p, and number of iterations before loss data
         """
         t = np.array(self.engine.t())
-        return (np.array(self.engine.x()))[t < self.iterations], (np.array(self.engine.p()))[t < self.iterations], t[t < self.iterations]
+        return (np.array(self.engine.x()))[t == self.iterations], (np.array(self.engine.p()))[t == self.iterations], t[t == self.iterations]
 
     def get_action(self):
         """Get action data from engine
