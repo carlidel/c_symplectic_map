@@ -24,7 +24,7 @@ class get_pybind_include(object):
 
 ext_modules = [
     Extension(
-        'c_symplectic_map',
+        'symplectic_map.c_symplectic_map',
         glob.glob('src/*.cpp'),
         include_dirs=[
             'src/',

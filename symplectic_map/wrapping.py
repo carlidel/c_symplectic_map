@@ -3,7 +3,7 @@ from tqdm import tqdm
 import scipy as sc
 import scipy.integrate as integrate
 
-from c_symplectic_map import c_symplectic_map
+from .c_symplectic_map import c_symplectic_map
 
 class symplectic_map(object):
     def __init__(self, omega_0, omega_1, omega_2, epsilon, x_star, delta, alpha, beta, barrier_radius, x_0, p_0):
