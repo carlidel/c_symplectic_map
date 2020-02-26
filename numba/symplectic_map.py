@@ -6,7 +6,11 @@ import scipy.integrate as integrate
 import cpu_symplectic_map as cpu
 
 
-class symplectic_map_cpu(object):
+def make_correlated_noise(n_elements, gamma=0.0):
+    return cpu.make_correlated_noise(n_elements, gamma)
+
+
+class symplectic_map(object):
     def __init__(self, omega_0, omega_1, omega_2, epsilon, x_star, delta, alpha, beta, barrier_radius, x_0, p_0):
         """Init symplectic map object!
         

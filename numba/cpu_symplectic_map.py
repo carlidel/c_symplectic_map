@@ -66,7 +66,8 @@ def iterate(x, px, noise, epsilon, alpha, beta, x_star, delta, omega_0, omega_1,
     for i in range(len(noise)):
         action = (x * x + px * px) * 0.5
         rot_angle = omega_0 + (omega_1 * action) + (0.5 * omega_2 * action * action)
-
+        # rot_angle = np.random.rand() * np.pi * 2
+        
         if (x == 0 and px == 0) or action >= action_radius:
             return 0.0, 0.0, i + start
         
