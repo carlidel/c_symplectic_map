@@ -15,7 +15,5 @@ setup(
     packages=['symplectic_map'],
     install_requires=['numba', 'numpy', 'scipy', 'tqdm'],
     setup_requires=['numba', 'numpy', 'scipy', 'tqdm'],
-    cmdclass={'build_ext': BuildExt},
-    zip_safe=False,
     license='MIT',
 )
