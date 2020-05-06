@@ -2,8 +2,11 @@ import numpy as np
 from tqdm import tqdm
 import scipy as sc
 import scipy.integrate as integrate
+from numba import cuda
+import numba.cuda.random as random
 
 from . import cpu_symplectic_map as cpu
+from . import gpu_symplectic_map as gpu
 
 
 def make_correlated_noise(n_elements, gamma=0.0):
@@ -11,92 +14,18 @@ def make_correlated_noise(n_elements, gamma=0.0):
 
 
 class symplectic_map(object):
-    def __init__(self, omega_0, omega_1, omega_2, epsilon, x_star, delta, alpha, beta, barrier_radius, x_0, p_0):
-        """Init symplectic map object!
-        
-        Parameters
-        ----------
-        object : self
-            self
-        omega_0 : float
-            Omega 0 frequency
-        omega_1 : float
-            Omega 1 frequency
-        omega_2 : float
-            Omega 2 frequency
-        epsilon : float
-            Noise coefficient
-        x_star : float
-            X star Nekhoroshev coefficient
-        delta : float
-            value to avoid singularities for zero action values
-        alpha : float
-            alpha exponential Nekhoroshev coefficient
-        beta : float
-            beta polynomial exponent
-        barrier_radius : float
-            barrier position (x coordinates!)
-        x_0 : ndarray
-            1D array of x initial positions
-        p_0 : ndarray
-            1D array of p initial values
-        """
-        self.omega_0 = omega_0
-        self.omega_1 = omega_1
-        self.omega_2 = omega_2
-        self.epsilon = epsilon
-        self.x_star = x_star
-        self.delta = delta
-        self.alpha = alpha
-        self.beta = beta
-        self.barrier_radius = barrier_radius
-        self.action_radius = barrier_radius ** 2 * 0.5
-        self.x_0 = x_0
-        self.p_0 = p_0
-        self.N = len(x_0)
-
-        self.iterations = 0
-
-        self.x = x_0
-        self.p = p_0
-        self.times = np.zeros(len(self.x))
-
+    def __init__(self):
+        pass
+    
     def reset(self):
-        """Reset the engine to initial conditions
-        """
-        self.iterations = 0
-        self.x = self.x_0
-        self.p = self.p_0
-        self.times = np.zeros(len(self.x))
+        pass
 
-    def compute_common_noise(self, noise_array):
-        """Execute iterations with given noise array, common for all particles.
-        
-        Parameters
-        ----------
-        noise_array : ndarray
-            noise array to use for computation
-        """
-        self.iterations += len(noise_array)
-        self.x, self.p, self.times = cpu.symplectic_map_common(
-            self.x, self.p, self.times, noise_array, self.epsilon, self.alpha, self.beta, self.x_star, self.delta, self.omega_0, self.omega_1, self.omega_2, self.action_radius
-        )
-
-    def compute_personal_noise(self, n_iterations, gamma=0.0):
-        """Execute iterations with correlated noise with different realization for every single particle.
-        
-        Parameters
-        ----------
-        n_iterations : unsigned int
-            number of iterations to perform
-        gamma : float, optional
-            correlation coefficient (between 0 and 1!), by default 0.0
-        """
-        self.iterations += n_iterations
-        self.x, self.p, self.times = cpu.symplectic_map_personal(
-            self.x, self.p, self.times, n_iterations, self.epsilon, self.alpha, self.beta, self.x_star, self.delta, self.omega_0, self.omega_1, self.omega_2, self.action_radius, gamma
-        )
-
+    def compute_common_noise(self):
+        pass
+    
+    def compute_personal_noise(self):
+        pass
+    
     def get_data(self):
         """Get data from engine.
         
@@ -208,3 +137,210 @@ class symplectic_map(object):
         currents = [(survival_quota[points[i]] - survival_quota[points[i+1]]
                      ) / bin_size for i in range(len(points) - 1)]
         return np.array(t_middle), np.array(currents)
+
+    @staticmethod
+    def generate_instance(omega_0, omega_1, omega_2, epsilon, x_star, delta, alpha, beta, barrier_radius, x_0, p_0, cuda_device=None):
+        if cuda_device == None:
+            cuda_device = cuda.is_available()
+        if cuda_device:
+            return symplectic_map_gpu(omega_0, omega_1, omega_2, epsilon, x_star, delta, alpha, beta, barrier_radius, x_0, p_0)
+        else:
+            return symplectic_map_cpu(omega_0, omega_1, omega_2, epsilon, x_star, delta, alpha, beta, barrier_radius, x_0, p_0)
+
+class symplectic_map_cpu(symplectic_map):
+    def __init__(self, omega_0, omega_1, omega_2, epsilon, x_star, delta, alpha, beta, barrier_radius, x_0, p_0):
+        """Init symplectic map object!
+        
+        Parameters
+        ----------
+        object : self
+            self
+        omega_0 : float
+            Omega 0 frequency
+        omega_1 : float
+            Omega 1 frequency
+        omega_2 : float
+            Omega 2 frequency
+        epsilon : float
+            Noise coefficient
+        x_star : float
+            X star Nekhoroshev coefficient
+        delta : float
+            value to avoid singularities for zero action values
+        alpha : float
+            alpha exponential Nekhoroshev coefficient
+        beta : float
+            beta polynomial exponent
+        barrier_radius : float
+            barrier position (x coordinates!)
+        x_0 : ndarray
+            1D array of x initial positions
+        p_0 : ndarray
+            1D array of p initial values
+        """
+        self.omega_0 = omega_0
+        self.omega_1 = omega_1
+        self.omega_2 = omega_2
+        self.epsilon = epsilon
+        self.x_star = x_star
+        self.delta = delta
+        self.alpha = alpha
+        self.beta = beta
+        self.barrier_radius = barrier_radius
+        self.action_radius = barrier_radius ** 2 * 0.5
+        self.x_0 = x_0
+        self.p_0 = p_0
+        self.N = len(x_0)
+
+        self.iterations = 0
+
+        self.x = x_0
+        self.p = p_0
+        self.times = np.zeros(len(self.x))
+
+    def reset(self):
+        """Reset the engine to initial conditions
+        """
+        self.iterations = 0
+        self.x = self.x_0
+        self.p = self.p_0
+        self.times = np.zeros(len(self.x))
+
+    def compute_common_noise(self, noise_array):
+        """Execute iterations with given noise array, common for all particles.
+        
+        Parameters
+        ----------
+        noise_array : ndarray
+            noise array to use for computation
+        """
+        self.iterations += len(noise_array)
+        self.x, self.p, self.times = cpu.symplectic_map_common(
+            self.x, self.p, self.times, noise_array, self.epsilon, self.alpha, self.beta, self.x_star, self.delta, self.omega_0, self.omega_1, self.omega_2, self.action_radius
+        )
+
+    def compute_personal_noise(self, n_iterations, gamma=0.0):
+        """Execute iterations with correlated noise with different realization for every single particle.
+        
+        Parameters
+        ----------
+        n_iterations : unsigned int
+            number of iterations to perform
+        gamma : float, optional
+            correlation coefficient (between 0 and 1!), by default 0.0
+        """
+        self.iterations += n_iterations
+        self.x, self.p, self.times = cpu.symplectic_map_personal(
+            self.x, self.p, self.times, n_iterations, self.epsilon, self.alpha, self.beta, self.x_star, self.delta, self.omega_0, self.omega_1, self.omega_2, self.action_radius, gamma
+        )
+
+
+class symplectic_map_gpu(symplectic_map):
+    def __init__(self, omega_0, omega_1, omega_2, epsilon, x_star, delta, alpha, beta, barrier_radius, x_0, p_0):
+        """Init symplectic map object!
+        
+        Parameters
+        ----------
+        object : self
+            self
+        omega_0 : float
+            Omega 0 frequency
+        omega_1 : float
+            Omega 1 frequency
+        omega_2 : float
+            Omega 2 frequency
+        epsilon : float
+            Noise coefficient
+        x_star : float
+            X star Nekhoroshev coefficient
+        delta : float
+            value to avoid singularities for zero action values
+        alpha : float
+            alpha exponential Nekhoroshev coefficient
+        beta : float
+            beta polynomial exponent
+        barrier_radius : float
+            barrier position (x coordinates!)
+        x_0 : ndarray
+            1D array of x initial positions
+        p_0 : ndarray
+            1D array of p initial values
+        """
+        self.omega_0 = omega_0
+        self.omega_1 = omega_1
+        self.omega_2 = omega_2
+        self.epsilon = epsilon
+        self.x_star = x_star
+        self.delta = delta
+        self.alpha = alpha
+        self.beta = beta
+        self.barrier_radius = barrier_radius
+        self.action_radius = barrier_radius ** 2 * 0.5
+        self.x_0 = x_0
+        self.p_0 = p_0
+        self.N = len(x_0)
+
+        self.iterations = 0
+
+        self.x = x_0
+        self.p = p_0
+        self.times = np.zeros(len(self.x))
+
+        # Load to GPU
+        self.d_x = cuda.to_device(self.x)
+        self.d_p = cuda.to_device(self.p)
+        self.d_times = cuda.to_device(self.times)
+
+    def reset(self):
+        """Reset the engine to initial conditions
+        """
+        self.iterations = 0
+        self.x = self.x_0
+        self.p = self.p_0
+        self.times = np.zeros(len(self.x))
+        self.d_x = cuda.to_device(self.x)
+        self.d_p = cuda.to_device(self.p)
+        self.d_times = cuda.to_device(self.times)
+
+    def compute_common_noise(self, noise_array):
+        """Execute iterations with given noise array, common for all particles.
+        
+        Parameters
+        ----------
+        noise_array : ndarray
+            noise array to use for computation
+        """
+        threads_per_block = 512
+        blocks_per_grid = self.x.size // 512 + 1
+
+        self.iterations += len(noise_array)
+        d_noise_array = cuda.to_device(noise_array)
+        gpu.symplectic_map_common[blocks_per_grid, threads_per_block](
+            self.d_x, self.d_p, self.d_times, d_noise_array, self.epsilon, self.alpha, self.beta, self.x_star, self.delta, self.omega_0, self.omega_1, self.omega_2, self.action_radius
+        )
+        self.d_x.copy_to_host(self.x)
+        self.d_p.copy_to_host(self.p)
+        self.d_times.copy_to_host(self.times)
+
+    def compute_personal_noise(self, n_iterations, gamma=0.0):
+        """Execute iterations with correlated noise with different realization for every single particle.
+        
+        Parameters
+        ----------
+        n_iterations : unsigned int
+            number of iterations to perform
+        gamma : float, optional
+            correlation coefficient (between 0 and 1!), by default 0.0
+        """
+        threads_per_block = 512
+        blocks_per_grid = self.x.size // 512 + 1
+
+        self.iterations += n_iterations
+        rng_states = cuda.random.create_xoroshiro128p_states(
+            threads_per_block * blocks_per_grid, seed=1)
+        gpu.symplectic_map_personal[blocks_per_grid, threads_per_block](
+            self.d_x, self.d_p, self.d_times, n_iterations, self.epsilon, self.alpha, self.beta, self.x_star, self.delta, self.omega_0, self.omega_1, self.omega_2, self.action_radius, rng_states, gamma
+        )
+        self.d_x.copy_to_host(self.x)
+        self.d_p.copy_to_host(self.p)
+        self.d_times.copy_to_host(self.times)
