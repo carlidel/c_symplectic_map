@@ -188,22 +188,22 @@ class symplectic_map_cpu(symplectic_map):
         self.beta = beta
         self.barrier_radius = barrier_radius
         self.action_radius = barrier_radius ** 2 * 0.5
-        self.x_0 = x_0
-        self.p_0 = p_0
+        self.x_0 = x_0.copy()
+        self.p_0 = p_0.copy()
         self.N = len(x_0)
 
         self.iterations = 0
 
-        self.x = x_0
-        self.p = p_0
+        self.x = x_0.copy()
+        self.p = p_0.copy()
         self.times = np.zeros(len(self.x))
 
     def reset(self):
         """Reset the engine to initial conditions
         """
         self.iterations = 0
-        self.x = self.x_0
-        self.p = self.p_0
+        self.x = self.x_0.copy()
+        self.p = self.p_0.copy()
         self.times = np.zeros(len(self.x))
 
     def compute_common_noise(self, noise_array):
@@ -276,14 +276,14 @@ class symplectic_map_gpu(symplectic_map):
         self.beta = beta
         self.barrier_radius = barrier_radius
         self.action_radius = barrier_radius ** 2 * 0.5
-        self.x_0 = x_0
-        self.p_0 = p_0
+        self.x_0 = x_0.copy()
+        self.p_0 = p_0.copy()
         self.N = len(x_0)
 
         self.iterations = 0
 
-        self.x = x_0
-        self.p = p_0
+        self.x = x_0.copy()
+        self.p = p_0.copy()
         self.times = np.zeros(len(self.x))
 
         # Load to GPU
@@ -295,8 +295,8 @@ class symplectic_map_gpu(symplectic_map):
         """Reset the engine to initial conditions
         """
         self.iterations = 0
-        self.x = self.x_0
-        self.p = self.p_0
+        self.x = self.x_0.copy()
+        self.p = self.p_0.copy()
         self.times = np.zeros(len(self.x))
         self.d_x = cuda.to_device(self.x)
         self.d_p = cuda.to_device(self.p)
